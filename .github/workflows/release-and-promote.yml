@@ -95,52 +95,52 @@ jobs:
             "${AWS_REGION}" || true
 
           echo "int_tag=${INT_TAG}" >> "$GITHUB_OUTPUT"
-#
-#      # ── Wait for integration healthy ───────────────────────────
-#      - name: Wait for integration environment
-#        run: |
-#          bash services/profiles-api/scripts/wait-argocd-app.sh \
-#            "${{ vars.ARGOCD_BASE_URL_INT }}" \
-#            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
-#            "${{ vars.ARGOCD_APP_NAME_INT }}" \
-#            300
-#
-#      # ── Semantic Release ───────────────────────────────────────
-#      - name: Semantic Release
-#        id: release
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          OUTPUT=$(npx semantic-release 2>&1) || true
-#          echo "${OUTPUT}"
-#
-#          VERSION=$(echo "${OUTPUT}" | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' || true)
-#
-#          if [ -z "${VERSION}" ]; then
-#            echo "No new release created."
-#            echo "released=false" >> "$GITHUB_OUTPUT"
-#          else
-#            echo "Released version: ${VERSION}"
-#            echo "released=true"        >> "$GITHUB_OUTPUT"
-#            echo "version=${VERSION}"   >> "$GITHUB_OUTPUT"
-#          fi
-#
-#      # ── Promote to staging (semver tag) ────────────────────────
-#      - name: Tag ECR with semver for staging
-#        if: steps.release.outputs.released == 'true'
-#        run: |
-#          bash services/profiles-api/scripts/tag-ecr.sh \
-#            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
-#            "${{ steps.docker.outputs.sha_tag }}" \
-#            "${{ steps.release.outputs.version }}" \
-#            "${AWS_REGION}"
-#
-#      # ── Wait for staging healthy ───────────────────────────────
-#      - name: Wait for staging environment
-#        if: steps.release.outputs.released == 'true'
-#        run: |
-#          bash services/profiles-api/scripts/wait-argocd-app.sh \
-#            "${{ vars.ARGOCD_BASE_URL_STG }}" \
-#            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
-#            "${{ vars.ARGOCD_APP_NAME_STG }}" \
-#            300
+
+      # ── Wait for integration healthy ───────────────────────────
+      - name: Wait for integration environment
+        run: |
+          bash services/profiles-api/scripts/wait-argocd-app.sh \
+            "${{ vars.ARGOCD_BASE_URL_INT }}" \
+            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
+            "${{ vars.ARGOCD_APP_NAME_INT }}" \
+            300
+
+      # ── Semantic Release ───────────────────────────────────────
+      - name: Semantic Release
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OUTPUT=$(npx semantic-release 2>&1) || true
+          echo "${OUTPUT}"
+
+          VERSION=$(echo "${OUTPUT}" | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' || true)
+
+          if [ -z "${VERSION}" ]; then
+            echo "No new release created."
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Released version: ${VERSION}"
+            echo "released=true"        >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}"   >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Promote to staging (semver tag) ────────────────────────
+      - name: Tag ECR with semver for staging
+        if: steps.release.outputs.released == 'true'
+        run: |
+          bash services/profiles-api/scripts/tag-ecr.sh \
+            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
+            "${{ steps.docker.outputs.sha_tag }}" \
+            "${{ steps.release.outputs.version }}" \
+            "${AWS_REGION}"
+
+      # ── Wait for staging healthy ───────────────────────────────
+      - name: Wait for staging environment
+        if: steps.release.outputs.released == 'true'
+        run: |
+          bash services/profiles-api/scripts/wait-argocd-app.sh \
+            "${{ vars.ARGOCD_BASE_URL_STG }}" \
+            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
+            "${{ vars.ARGOCD_APP_NAME_STG }}" \
+            300
