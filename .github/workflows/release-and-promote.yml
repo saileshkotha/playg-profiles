@@ -16,7 +16,7 @@ concurrency:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  ECR_REPOSITORY: 'profiles/profiles-api'
 
 jobs:
   release-and-promote:
@@ -53,26 +53,26 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-#      # ── Build & push Docker image with sha tag ────────────────
-#      - name: Build and push Docker image
-#        id: docker
-#        run: |
-#          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}"
-#          SHA_TAG="sha-${GITHUB_SHA}"
-#
-#          docker build \
-#            -f services/profiles-api/Dockerfile \
-#            --build-arg GIT_SHA="${GITHUB_SHA}" \
-#            -t "${IMAGE}:${SHA_TAG}" \
-#            .
-#
-#          docker push "${IMAGE}:${SHA_TAG}"
-#
-#          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${SHA_TAG}" | cut -d@ -f2)
-#          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
-#          echo "digest=${DIGEST}"   >> "$GITHUB_OUTPUT"
-#          echo "image=${IMAGE}"     >> "$GITHUB_OUTPUT"
-#
+      # ── Build & push Docker image with sha tag ────────────────
+      - name: Build and push Docker image
+        id: docker
+        run: |
+          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+          SHA_TAG="sha-${GITHUB_SHA}"
+
+          docker build \
+            -f services/profiles-api/Dockerfile \
+            --build-arg GIT_SHA="${GITHUB_SHA}" \
+            -t "${IMAGE}:${SHA_TAG}" \
+            .
+
+          docker push "${IMAGE}:${SHA_TAG}"
+
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${SHA_TAG}" | cut -d@ -f2)
+          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
+          echo "digest=${DIGEST}"   >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}"     >> "$GITHUB_OUTPUT"
+
 #      # ── Tag integration ────────────────────────────────────────
 #      - name: Create integration ECR tag
 #        id: int-tag
