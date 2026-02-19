@@ -53,92 +53,92 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ── Build & push Docker image with sha tag ────────────────
-      - name: Build and push Docker image
-        id: docker
-        run: |
-          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}"
-          SHA_TAG="sha-${GITHUB_SHA}"
-
-          docker build \
-            -f services/profiles-api/Dockerfile \
-            --build-arg GIT_SHA="${GITHUB_SHA}" \
-            -t "${IMAGE}:${SHA_TAG}" \
-            .
-
-          docker push "${IMAGE}:${SHA_TAG}"
-
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${SHA_TAG}" | cut -d@ -f2)
-          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
-          echo "digest=${DIGEST}"   >> "$GITHUB_OUTPUT"
-          echo "image=${IMAGE}"     >> "$GITHUB_OUTPUT"
-
-      # ── Tag integration ────────────────────────────────────────
-      - name: Create integration ECR tag
-        id: int-tag
-        run: |
-          SHORT_SHA="${GITHUB_SHA:0:7}"
-          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
-          INT_TAG="int-${SHORT_SHA}-${TIMESTAMP}"
-
-          bash services/profiles-api/scripts/tag-ecr.sh \
-            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
-            "${{ steps.docker.outputs.sha_tag }}" "${INT_TAG}" \
-            "${AWS_REGION}"
-
-          # Optional floating tag
-          bash services/profiles-api/scripts/tag-ecr.sh \
-            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
-            "${{ steps.docker.outputs.sha_tag }}" "integration" \
-            "${AWS_REGION}" || true
-
-          echo "int_tag=${INT_TAG}" >> "$GITHUB_OUTPUT"
-
-      # ── Wait for integration healthy ───────────────────────────
-      - name: Wait for integration environment
-        run: |
-          bash services/profiles-api/scripts/wait-argocd-app.sh \
-            "${{ secrets.ARGOCD_BASE_URL_INT }}" \
-            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
-            "${{ secrets.ARGOCD_APP_NAME_INT }}" \
-            300
-
-      # ── Semantic Release ───────────────────────────────────────
-      - name: Semantic Release
-        id: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OUTPUT=$(npx semantic-release 2>&1) || true
-          echo "${OUTPUT}"
-
-          VERSION=$(echo "${OUTPUT}" | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' || true)
-
-          if [ -z "${VERSION}" ]; then
-            echo "No new release created."
-            echo "released=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Released version: ${VERSION}"
-            echo "released=true"        >> "$GITHUB_OUTPUT"
-            echo "version=${VERSION}"   >> "$GITHUB_OUTPUT"
-          fi
-
-      # ── Promote to staging (semver tag) ────────────────────────
-      - name: Tag ECR with semver for staging
-        if: steps.release.outputs.released == 'true'
-        run: |
-          bash services/profiles-api/scripts/tag-ecr.sh \
-            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
-            "${{ steps.docker.outputs.sha_tag }}" \
-            "${{ steps.release.outputs.version }}" \
-            "${AWS_REGION}"
-
-      # ── Wait for staging healthy ───────────────────────────────
-      - name: Wait for staging environment
-        if: steps.release.outputs.released == 'true'
-        run: |
-          bash services/profiles-api/scripts/wait-argocd-app.sh \
-            "${{ secrets.ARGOCD_BASE_URL_STG }}" \
-            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
-            "${{ secrets.ARGOCD_APP_NAME_STG }}" \
-            300
+#      # ── Build & push Docker image with sha tag ────────────────
+#      - name: Build and push Docker image
+#        id: docker
+#        run: |
+#          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+#          SHA_TAG="sha-${GITHUB_SHA}"
+#
+#          docker build \
+#            -f services/profiles-api/Dockerfile \
+#            --build-arg GIT_SHA="${GITHUB_SHA}" \
+#            -t "${IMAGE}:${SHA_TAG}" \
+#            .
+#
+#          docker push "${IMAGE}:${SHA_TAG}"
+#
+#          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${SHA_TAG}" | cut -d@ -f2)
+#          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
+#          echo "digest=${DIGEST}"   >> "$GITHUB_OUTPUT"
+#          echo "image=${IMAGE}"     >> "$GITHUB_OUTPUT"
+#
+#      # ── Tag integration ────────────────────────────────────────
+#      - name: Create integration ECR tag
+#        id: int-tag
+#        run: |
+#          SHORT_SHA="${GITHUB_SHA:0:7}"
+#          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+#          INT_TAG="int-${SHORT_SHA}-${TIMESTAMP}"
+#
+#          bash services/profiles-api/scripts/tag-ecr.sh \
+#            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
+#            "${{ steps.docker.outputs.sha_tag }}" "${INT_TAG}" \
+#            "${AWS_REGION}"
+#
+#          # Optional floating tag
+#          bash services/profiles-api/scripts/tag-ecr.sh \
+#            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
+#            "${{ steps.docker.outputs.sha_tag }}" "integration" \
+#            "${AWS_REGION}" || true
+#
+#          echo "int_tag=${INT_TAG}" >> "$GITHUB_OUTPUT"
+#
+#      # ── Wait for integration healthy ───────────────────────────
+#      - name: Wait for integration environment
+#        run: |
+#          bash services/profiles-api/scripts/wait-argocd-app.sh \
+#            "${{ secrets.ARGOCD_BASE_URL_INT }}" \
+#            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
+#            "${{ secrets.ARGOCD_APP_NAME_INT }}" \
+#            300
+#
+#      # ── Semantic Release ───────────────────────────────────────
+#      - name: Semantic Release
+#        id: release
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          OUTPUT=$(npx semantic-release 2>&1) || true
+#          echo "${OUTPUT}"
+#
+#          VERSION=$(echo "${OUTPUT}" | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' || true)
+#
+#          if [ -z "${VERSION}" ]; then
+#            echo "No new release created."
+#            echo "released=false" >> "$GITHUB_OUTPUT"
+#          else
+#            echo "Released version: ${VERSION}"
+#            echo "released=true"        >> "$GITHUB_OUTPUT"
+#            echo "version=${VERSION}"   >> "$GITHUB_OUTPUT"
+#          fi
+#
+#      # ── Promote to staging (semver tag) ────────────────────────
+#      - name: Tag ECR with semver for staging
+#        if: steps.release.outputs.released == 'true'
+#        run: |
+#          bash services/profiles-api/scripts/tag-ecr.sh \
+#            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
+#            "${{ steps.docker.outputs.sha_tag }}" \
+#            "${{ steps.release.outputs.version }}" \
+#            "${AWS_REGION}"
+#
+#      # ── Wait for staging healthy ───────────────────────────────
+#      - name: Wait for staging environment
+#        if: steps.release.outputs.released == 'true'
+#        run: |
+#          bash services/profiles-api/scripts/wait-argocd-app.sh \
+#            "${{ secrets.ARGOCD_BASE_URL_STG }}" \
+#            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
+#            "${{ secrets.ARGOCD_APP_NAME_STG }}" \
+#            300
