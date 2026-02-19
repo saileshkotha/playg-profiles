@@ -75,26 +75,26 @@ jobs:
           echo "digest=${DIGEST}"   >> "$GITHUB_OUTPUT"
           echo "image=${IMAGE}"     >> "$GITHUB_OUTPUT"
 
-#      # ── Tag integration ────────────────────────────────────────
-#      - name: Create integration ECR tag
-#        id: int-tag
-#        run: |
-#          SHORT_SHA="${GITHUB_SHA:0:7}"
-#          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
-#          INT_TAG="int-${SHORT_SHA}-${TIMESTAMP}"
-#
-#          bash services/profiles-api/scripts/tag-ecr.sh \
-#            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
-#            "${{ steps.docker.outputs.sha_tag }}" "${INT_TAG}" \
-#            "${AWS_REGION}"
-#
-#          # Optional floating tag
-#          bash services/profiles-api/scripts/tag-ecr.sh \
-#            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
-#            "${{ steps.docker.outputs.sha_tag }}" "integration" \
-#            "${AWS_REGION}" || true
-#
-#          echo "int_tag=${INT_TAG}" >> "$GITHUB_OUTPUT"
+      # ── Tag integration ────────────────────────────────────────
+      - name: Create integration ECR tag
+        id: int-tag
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          TIMESTAMP=$(date -u +"%Y%m%d%H%M%S")
+          INT_TAG="int-${SHORT_SHA}-${TIMESTAMP}"
+
+          bash services/profiles-api/scripts/tag-ecr.sh \
+            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
+            "${{ steps.docker.outputs.sha_tag }}" "${INT_TAG}" \
+            "${AWS_REGION}"
+
+          # Optional floating tag
+          bash services/profiles-api/scripts/tag-ecr.sh \
+            "${ECR_REGISTRY}" "${ECR_REPOSITORY}" \
+            "${{ steps.docker.outputs.sha_tag }}" "integration" \
+            "${AWS_REGION}" || true
+
+          echo "int_tag=${INT_TAG}" >> "$GITHUB_OUTPUT"
 #
 #      # ── Wait for integration healthy ───────────────────────────
 #      - name: Wait for integration environment
