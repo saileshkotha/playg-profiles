@@ -1,7 +1,9 @@
 name: Release & Promote
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 
 permissions:
@@ -14,8 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
   ECR_REPOSITORY: 'profiles/profiles-api'
 
 jobs:
@@ -47,7 +49,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Log in to ECR
         id: ecr-login
@@ -98,9 +100,9 @@ jobs:
 #      - name: Wait for integration environment
 #        run: |
 #          bash services/profiles-api/scripts/wait-argocd-app.sh \
-#            "${{ secrets.ARGOCD_BASE_URL_INT }}" \
+#            "${{ vars.ARGOCD_BASE_URL_INT }}" \
 #            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
-#            "${{ secrets.ARGOCD_APP_NAME_INT }}" \
+#            "${{ vars.ARGOCD_APP_NAME_INT }}" \
 #            300
 #
 #      # ── Semantic Release ───────────────────────────────────────
@@ -138,7 +140,7 @@ jobs:
 #        if: steps.release.outputs.released == 'true'
 #        run: |
 #          bash services/profiles-api/scripts/wait-argocd-app.sh \
-#            "${{ secrets.ARGOCD_BASE_URL_STG }}" \
+#            "${{ vars.ARGOCD_BASE_URL_STG }}" \
 #            "${{ secrets.ARGOCD_AUTH_TOKEN }}" \
-#            "${{ secrets.ARGOCD_APP_NAME_STG }}" \
+#            "${{ vars.ARGOCD_APP_NAME_STG }}" \
 #            300
